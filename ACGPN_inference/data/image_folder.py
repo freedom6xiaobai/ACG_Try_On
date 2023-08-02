@@ -13,6 +13,7 @@ def is_image_file(filename):
     return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
 
 def make_dataset(dir):
+    print(f'dir: {dir}')
     images = []
     assert os.path.isdir(dir), '%s is not a valid directory' % dir
 
@@ -22,11 +23,12 @@ def make_dataset(dir):
     for img in dirs:
 
         path = os.path.join(dir, img)
-        #print(path)
+        print(path)
         images.append(path)
     return images
 
 def make_dataset_test(dir):
+    print(f'dir: {dir}')
     images = []
     assert os.path.isdir(dir), '%s is not a valid directory' % dir
 
@@ -37,7 +39,7 @@ def make_dataset_test(dir):
         else:
             img = str(i) + '.jpg'
         path = os.path.join(dir, img)
-        #print(path)
+        print(path)
         images.append(path)
     return images
 
