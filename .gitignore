@@ -1,0 +1,5 @@
+venv
+.idea
+
+ACGPN_traindata
+ACGPN_inference/checkpoints/label2city
