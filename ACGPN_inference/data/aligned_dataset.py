@@ -8,13 +8,15 @@ import numpy as np
 import os.path as osp
 from PIL import ImageDraw
 
-print(f'os.path: {osp}')
 
 class AlignedDataset(BaseDataset):
     def initialize(self, opt):
         self.opt = opt
         self.root = opt.dataroot
         self.diction={}
+
+        print('root: ', self.root)
+
         ### input A (label maps)
         if opt.isTrain or opt.use_encoded_image:
             dir_A = '_A' if self.opt.label_nc == 0 else '_label'
