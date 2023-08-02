@@ -21,6 +21,7 @@ class AlignedDataset(BaseDataset):
         if opt.isTrain or opt.use_encoded_image:
             dir_A = '_A' if self.opt.label_nc == 0 else '_label'
             self.dir_A = os.path.join(opt.dataroot, opt.phase + dir_A)
+            print(f'dir_A: {self.dir_A}')
             self.A_paths = sorted(make_dataset(self.dir_A))
             self.AR_paths = make_dataset(self.dir_A)
 
