@@ -103,24 +103,24 @@ class AlignedDataset(BaseDataset):
                         self.diction[name].append(d)
 
     def __getitem__(self, index):
-        train_mask = 9600
+        # train_mask = 9600
         ### input A (label maps)
         box = []
         # for k,x in enumerate(self.A_paths):
         #     if '000386' in x :
         #         index=k
         #         break
-        test = np.random.randint(2032)
+        # test = np.random.randint(2032)
         # for k, s in enumerate(self.B_paths):
         #    if '006581' in s:
         #        test = k
         #        break
-        if self.opt.cstmr_n:
-            cstmr_n = self.opt.cstmr_n
-        else:
-            cstmr_n = index
-
-        A_path = self.A_paths[cstmr_n]
+        # if self.opt.cstmr_n:
+        #     cstmr_n = self.opt.cstmr_n
+        # else:
+        #     cstmr_n = index
+        # print(f'index - a:{index}')
+        A_path = self.A_paths[index]
         AR_path = self.AR_paths[index]
         A = Image.open(A_path).convert('L')
         AR = Image.open(AR_path).convert('L')
@@ -138,11 +138,10 @@ class AlignedDataset(BaseDataset):
         B_tensor = inst_tensor = feat_tensor = 0
         ### input B (real images)
 
-        # B_path = self.B_paths[index]
-        B_path = self.B_paths[cstmr_n]
+        B_path = self.B_paths[index]
         name = B_path.split('/')[-1]
 
-        BR_path = self.BR_paths[cstmr_n]
+        BR_path = self.BR_paths[index]
         B = Image.open(B_path).convert('RGB')
         BR = Image.open(BR_path).convert('RGB')
         transform_B = get_transform(self.opt, params)
@@ -150,26 +149,26 @@ class AlignedDataset(BaseDataset):
         BR_tensor = transform_B(BR)
 
         ### input M (masks)
-        M_path = B_path  # self.M_paths[np.random.randint(1)]
-        MR_path = B_path  # self.MR_paths[np.random.randint(1)]
+        M_path = B_path
+        MR_path = B_path
         M = Image.open(M_path).convert('L')
         MR = Image.open(MR_path).convert('L')
         M_tensor = transform_A(MR)
 
         ### input_MC (colorMasks)
-        MC_path = B_path  # self.MC_paths[1]
-        MCR_path = B_path  # self.MCR_paths[1]
+        MC_path = B_path
+        MCR_path = B_path
         MCR = Image.open(MCR_path).convert('L')
         MC_tensor = transform_A(MCR)
 
         ### input_C (color)
         # print(self.C_paths)
-        C_path = self.C_paths[test]
+        C_path = self.C_paths[index]
         C = Image.open(C_path).convert('RGB')
         C_tensor = transform_B(C)
 
         ##Edge
-        E_path = self.E_paths[test]
+        E_path = self.E_paths[index]
         # print(E_path)
         E = Image.open(E_path).convert('L')
         E_tensor = transform_A(E)

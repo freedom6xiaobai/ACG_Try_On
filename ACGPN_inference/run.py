@@ -1,6 +1,5 @@
 import sys
 import time
-from collections import OrderedDict
 from options.train_options import TrainOptions
 from data.data_loader import CreateDataLoader
 from models.models import create_model
@@ -9,21 +8,19 @@ import os
 import numpy as np
 import torch
 from torch.autograd import Variable
-from torch.utils.tensorboard import SummaryWriter
 import cv2
 
-writer = SummaryWriter('runs/G1G2')
-SIZE = 320
 NC = 14
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 if current_directory not in sys.path:
     sys.path.append(current_directory)
 
-print(f'current_directory: {current_directory}')
-
 
 def fashion_test():
+    print(f'current_directory: {current_directory}')
+
+    # 首先，调用generate_label_plain(input_label)函数，输入参数input_label是一个多通道的标签图像张量。函数将输入的多通道标签图像转换为单通道的标签图像，返回label_batch，其中label_batch是一个张量，形状为(batch_size, 1, 256, 192)，表示每个样本中的标签图像已经转换为单通道。
     def generate_label_plain(inputs):
         size = inputs.size()
         pred_batch = []
@@ -38,6 +35,7 @@ def fashion_test():
 
         return label_batch
 
+    # 该函数通过将单通道的标签图像转换回多通道的标签图像，返回input_label
     def generate_label_color(inputs):
         label_batch = []
         for i in range(len(inputs)):
@@ -80,107 +78,67 @@ def fashion_test():
     os.makedirs('sample', exist_ok=True)
     opt = TrainOptions().parse()
     # config
-    start_epoch, epoch_iter = 1, 0
-    opt.display_freq = 1
-    opt.print_freq = 1
-    opt.niter = 1
-    opt.niter_decay = 0
-    opt.max_dataset_size = 10
-
     data_loader = CreateDataLoader(opt)
     dataset = data_loader.load_data()
     dataset_size = len(data_loader)
     print('# Inference images = %d' % dataset_size)
 
+    print('Start Testing:')
+
     # model create
     model = create_model(opt)
-    total_steps = (start_epoch - 1) * dataset_size + epoch_iter
 
-    print('Start Testing:')
-    print(f'start_epoch: {start_epoch}')  # 1
-    print(f'epoch_iter: {epoch_iter}')  # 0
-    print(f' opt.niter: {opt.niter}')  # 100
-    print(f'opt.niter_decay: {opt.niter_decay + 1}')  # 101
+    epoch_start_time = time.time()
+    for idx, data in enumerate(dataset, start=0):
+        print('Start Testing:1')
 
-    step = 0
-    for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
-        epoch_start_time = time.time()
-        if epoch != start_epoch:
-            epoch_iter = epoch_iter % dataset_size
-        for i, data in enumerate(dataset, start=epoch_iter):
+        # add gaussian noise channel
+        # wash the label
+        t_mask = torch.FloatTensor((data['label'].cpu().numpy() == 7).astype(np.float64))
+        data['label'] = data['label'] * (1 - t_mask) + t_mask * 4
+        mask_clothes = torch.FloatTensor((data['label'].cpu().numpy() == 4).astype(np.int64))
+        mask_fore = torch.FloatTensor((data['label'].cpu().numpy() > 0).astype(np.int64))
+        img_fore = data['image'] * mask_fore
+        img_fore_wc = img_fore * mask_fore
+        all_clothes_label = changearm(data['label'])
 
-            total_steps += opt.batchSize
-            epoch_iter += opt.batchSize
+        print('Start Testing:2')
 
-            print('Start Testing:1')
+        ############## Forward Pass ######################
+        losses, fake_image, real_image, input_label, L1_loss, style_loss, clothes_mask, CE_loss, rgb, alpha = model(
+            Variable(data['label'].cuda()), Variable(data['edge'].cuda()), Variable(img_fore.cuda()),
+            Variable(mask_clothes.cuda())
+            , Variable(data['color'].cuda()), Variable(all_clothes_label.cuda()), Variable(data['image'].cuda()),
+            Variable(data['pose'].cuda()), Variable(data['image'].cuda()), Variable(mask_fore.cuda()))
 
-            ##add gaussian noise channel
-            ## wash the label
-            t_mask = torch.FloatTensor((data['label'].cpu().numpy() == 7).astype(np.float64))
-            data['label'] = data['label'] * (1 - t_mask) + t_mask * 4
-            mask_clothes = torch.FloatTensor((data['label'].cpu().numpy() == 4).astype(np.int64))
-            mask_fore = torch.FloatTensor((data['label'].cpu().numpy() > 0).astype(np.int64))
-            img_fore = data['image'] * mask_fore
-            img_fore_wc = img_fore * mask_fore
-            all_clothes_label = changearm(data['label'])
+        print('Start Testing:3')
 
-            print('Start Testing:2')
+        # sum per device losses
+        losses = [torch.mean(x) if not isinstance(x, int) else x for x in losses]
+        print(f'losses: {losses}')
 
-            ############## Forward Pass ######################
-            losses, fake_image, real_image, input_label, L1_loss, style_loss, clothes_mask, CE_loss, rgb, alpha = model(
-                Variable(data['label'].cuda()), Variable(data['edge'].cuda()), Variable(img_fore.cuda()),
-                Variable(mask_clothes.cuda())
-                , Variable(data['color'].cuda()), Variable(all_clothes_label.cuda()), Variable(data['image'].cuda()),
-                Variable(data['pose'].cuda()), Variable(data['image'].cuda()), Variable(mask_fore.cuda()))
+        print('Start Testing:4')
 
-            print('Start Testing:3')
+        ## display output images
+        a = generate_label_color(generate_label_plain(input_label)).float().cuda()
+        b = real_image.float().cuda()
+        c = fake_image.float().cuda()
+        d = torch.cat([clothes_mask, clothes_mask, clothes_mask], 1)
+        combine = torch.cat([a[0], d[0], b[0], c[0], rgb[0]], 2).squeeze()
+        combine = c[0].squeeze()
+        cv_img = (combine.permute(1, 2, 0).detach().cpu().numpy() + 1) / 2
 
-            # sum per device losses
-            losses = [torch.mean(x) if not isinstance(x, int) else x for x in losses]
-            print(f'losses: {losses}')
-            # loss_dict = dict(zip(model.module.loss_names, losses))
+        rgb = (cv_img * 255).astype(np.uint8)
+        bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+        name = data['name'][0]
+        print(f'name {name}')
+        cv2.imwrite('sample/' + name, bgr)
+        print(idx)
 
-            print('Start Testing:4')
+    print('Start Testing:6')
 
-            ############## Display results and errors ##########
-
-            print('Start Testing:5')
-
-            ### display output images
-            a = generate_label_color(generate_label_plain(input_label)).float().cuda()
-            b = real_image.float().cuda()
-            c = fake_image.float().cuda()
-            d = torch.cat([clothes_mask, clothes_mask, clothes_mask], 1)
-            combine = torch.cat([a[0], d[0], b[0], c[0], rgb[0]], 2).squeeze()
-            # combine=c[0].squeeze()
-            cv_img = (combine.permute(1, 2, 0).detach().cpu().numpy() + 1) / 2
-            if step % 1 == 0:
-                writer.add_image('combine', (combine.data + 1) / 2.0, step)
-                rgb = (cv_img * 255).astype(np.uint8)
-                bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-                if os.environ.get('DISPLAY') is not None:
-                    cv2.imshow("result", bgr)
-                    cv2.waitKey(2000)
-                    # cv2.destroyAllWindows()
-                n = str(step) + '.jpg'
-                name_list = data['name']
-                print(f'n {n}')
-                print(f'name_list {name_list}')
-                cv2.imwrite('sample/' + data['name'][0], bgr)
-            step += 1
-            print(step)
-            if epoch_iter >= dataset_size:
-                break
-
-        print('Start Testing:6')
-
-        # end of epoch
-        print('End of epoch %d / %d \t Time Taken: %d sec' % ( epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
-
-        ### linearly decay learning rate after certain iterations
-        if epoch > opt.niter:
-            print('linearly decay learning rate after certain iterations')
-            model.module.update_learning_rate()
+    # end of epoch
+    print('End of Time Taken: %d sec' % (time.time() - epoch_start_time))
 
 
 if __name__ == '__main__':
