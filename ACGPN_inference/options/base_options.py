@@ -17,7 +17,7 @@ class BaseOptions():
         self.parser.add_argument('--norm', type=str, default='instance', help='instance normalization or batch normalization')
         self.parser.add_argument('--use_dropout', action='store_true', help='use dropout for the generator')
         self.parser.add_argument('--data_type', default=32, type=int, choices=[8, 16, 32], help="Supported data type i.e. 8, 16, 32 bit")
-        self.parser.add_argument('--verbose', action='store_true', default=False, help='toggles verbose')
+        self.parser.add_argument('--verbose', action='store_true', default=True, help='toggles verbose')
 
         # input/output sizes
         self.parser.add_argument('--batchSize', type=int, default=1, help='input batch size')
@@ -79,6 +79,7 @@ class BaseOptions():
 
         # save to the disk
         expr_dir = os.path.join(self.opt.checkpoints_dir, self.opt.name)
+        print(f'experiment dir: {expr_dir}')
         util.mkdirs(expr_dir)
         if save and not self.opt.continue_train:
             file_name = os.path.join(expr_dir, 'opt.txt')
