@@ -1,5 +1,6 @@
 import numpy
 num=5
+j = 1
 for i in range(num):
     row = []
     print()

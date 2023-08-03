@@ -1,4 +1,4 @@
-### Copyright (C) 2017 NVIDIA Corporation. All rights reserved. 
+### Copyright (C) 2017 NVIDIA Corporation. All rights reserved.
 ### Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 import time
 from collections import OrderedDict
@@ -10,7 +10,7 @@ import os
 import numpy as np
 import torch
 from torch.autograd import Variable
-from tensorboardX import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 import cv2
 import datetime
 import ipdb
@@ -90,8 +90,8 @@ if opt.continue_train:
         start_epoch, epoch_iter = np.loadtxt(iter_path , delimiter=',', dtype=int)
     except:
         start_epoch, epoch_iter = 1, 0
-    print('Resuming from epoch %d at iteration %d' % (start_epoch, epoch_iter))        
-else:    
+    print('Resuming from epoch %d at iteration %d' % (start_epoch, epoch_iter))
+else:
     start_epoch, epoch_iter = 1, 0
 
 if opt.debug:
@@ -162,7 +162,7 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         writer.add_scalar('loss_g_gan', loss_dict['G_GAN'], step)
         writer.add_scalar('loss_g_gan_feat', loss_dict['G_GAN_Feat'], step)
         writer.add_scalar('loss_g_vgg', loss_dict['G_VGG'], step)
-  
+
         ############### Backward Pass ####################
         # update generator weights
         model.module.optimizer_G.zero_grad()
@@ -179,7 +179,7 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
 
         ############## Display results and errors ##########
 
-        
+
         ### display output images
         if step % 100 == 0:
             a = generate_label_color(generate_label_plain(input_label)).float().cuda()
@@ -214,15 +214,15 @@ for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
 
         if epoch_iter >= dataset_size:
             break
-       
-    # end of epoch 
+
+    # end of epoch
     iter_end_time = time.time()
     print('End of epoch %d / %d \t Time Taken: %d sec' %
           (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
 
     ### save model for this epoch
     if epoch % opt.save_epoch_freq == 0:
-        print('saving the model at the end of epoch %d, iters %d' % (epoch, total_steps))        
+        print('saving the model at the end of epoch %d, iters %d' % (epoch, total_steps))
         model.module.save('latest')
         model.module.save(epoch)
         np.savetxt(iter_path, (epoch + 1, 0), delimiter=',', fmt='%d')

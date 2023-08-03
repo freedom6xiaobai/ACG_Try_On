@@ -1,4 +1,4 @@
-### Copyright (C) 2017 NVIDIA Corporation. All rights reserved. 
+### Copyright (C) 2017 NVIDIA Corporation. All rights reserved.
 ### Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode).
 import torch
 import os
@@ -44,8 +44,10 @@ def define_G(input_nc, output_nc, ngf, netG, L=1, S=1, n_downsample_global=3, n_
              n_blocks_local=3, norm='instance', gpu_ids=[]):
     norm_layer = get_norm_layer(norm_type=norm)
     if netG == 'global':
+        print('global enhancer not implemented')
         netG = GlobalGenerator(input_nc, output_nc, L, S, ngf, n_downsample_global, n_blocks_global, norm_layer)
     elif netG == 'local':
+        print('local enhancer not implemented')
         netG = LocalEnhancer(input_nc, output_nc, ngf, n_downsample_global, n_blocks_global,
                              n_local_enhancers, n_blocks_local, norm_layer)
     else:
