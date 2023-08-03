@@ -51,7 +51,7 @@ def fashion_test():
     def complete_compose(img, mask, label):
         label = label.cpu().numpy()
         M_f = label > 0
-        M_f = M_f.astype(np.int)
+        M_f = M_f.astype(np.int64)
         M_f = torch.FloatTensor(M_f).cuda()
         masked_img = img * (1 - mask)
         M_c = (1 - mask.cuda()) * M_f
@@ -69,9 +69,9 @@ def fashion_test():
 
     def changearm(old_label):
         label = old_label
-        arm1 = torch.FloatTensor((data['label'].cpu().numpy() == 11).astype(np.int))
-        arm2 = torch.FloatTensor((data['label'].cpu().numpy() == 13).astype(np.int))
-        noise = torch.FloatTensor((data['label'].cpu().numpy() == 7).astype(np.int))
+        arm1 = torch.FloatTensor((data['label'].cpu().numpy() == 11).astype(np.int64))
+        arm2 = torch.FloatTensor((data['label'].cpu().numpy() == 13).astype(np.int64))
+        noise = torch.FloatTensor((data['label'].cpu().numpy() == 7).astype(np.int64))
         label = label * (1 - arm1) + arm1 * 4
         label = label * (1 - arm2) + arm2 * 4
         label = label * (1 - noise) + noise * 4
@@ -129,8 +129,8 @@ def fashion_test():
             ## wash the label
             t_mask = torch.FloatTensor((data['label'].cpu().numpy() == 7).astype(np.float64))
             data['label'] = data['label'] * (1 - t_mask) + t_mask * 4
-            mask_clothes = torch.FloatTensor((data['label'].cpu().numpy() == 4).astype(np.int))
-            mask_fore = torch.FloatTensor((data['label'].cpu().numpy() > 0).astype(np.int))
+            mask_clothes = torch.FloatTensor((data['label'].cpu().numpy() == 4).astype(np.int64))
+            mask_fore = torch.FloatTensor((data['label'].cpu().numpy() > 0).astype(np.int64))
             img_fore = data['image'] * mask_fore
             img_fore_wc = img_fore * mask_fore
             all_clothes_label = changearm(data['label'])
