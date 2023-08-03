@@ -16,6 +16,8 @@ from torch.autograd import Variable
 from tps_grid_gen import TPSGridGen
 
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 ###############################################################################
 # Functions
 ###############################################################################
@@ -49,30 +51,35 @@ def define_G(input_nc, output_nc, ngf, netG, L=1, S=1, n_downsample_global=3, n_
     else:
         raise ('generator not implemented!')
     print(netG)
+
     if len(gpu_ids) > 0:
         assert (torch.cuda.is_available())
-        netG.cuda(gpu_ids[0])
+        # netG.cuda(gpu_ids[0])
+        netG.cuda(device)
     netG.apply(weights_init)
     return netG
 
 
 def define_Unet(input_nc, gpu_ids=[]):
     netG = Unet(input_nc)
-    netG.cuda(gpu_ids[0])
+    # netG.cuda(gpu_ids[0])
+    netG.cuda(device)
     netG.apply(weights_init)
     return netG
 
 
 def define_UnetMask(input_nc, gpu_ids=[]):
     netG = UnetMask(input_nc, output_nc=4)
-    netG.cuda(gpu_ids[0])
+    # netG.cuda(gpu_ids[0])
+    netG.cuda(device)
     netG.apply(weights_init)
     return netG
 
 
 def define_Refine(input_nc, output_nc, gpu_ids=[]):
     netG = Refine(input_nc, output_nc)
-    netG.cuda(gpu_ids[0])
+    # netG.cuda(gpu_ids[0])
+    netG.cuda(device)
     netG.apply(weights_init)
     return netG
 
@@ -83,7 +90,8 @@ def define_D(input_nc, ndf, n_layers_D, norm='instance', use_sigmoid=False, num_
     print(netD)
     if len(gpu_ids) > 0:
         assert (torch.cuda.is_available())
-        netD.cuda(gpu_ids[0])
+        # netD.cuda(gpu_ids[0])
+        netD.cuda(device)
     netD.apply(weights_init)
     return netD
 
@@ -93,7 +101,8 @@ def define_VAE(input_nc, gpu_ids=[]):
     print(netVAE)
     if len(gpu_ids) > 0:
         assert (torch.cuda.is_available())
-        netVAE.cuda(gpu_ids[0])
+        # netVAE.cuda(gpu_ids[0])
+        netVAE.cuda(device)
     return netVAE
 
 
@@ -103,7 +112,8 @@ def define_B(input_nc, output_nc, ngf, n_downsample_global=3, n_blocks_global=3,
     print(netB)
     if len(gpu_ids) > 0:
         assert (torch.cuda.is_available())
-        netB.cuda(gpu_ids[0])
+        # netB.cuda(gpu_ids[0])
+        netB.cuda(device)
     netB.apply(weights_init)
     return netB
 
@@ -113,7 +123,8 @@ def define_partial_enc(input_nc, gpu_ids=[]):
     print(net)
     if len(gpu_ids) > 0:
         assert (torch.cuda.is_available())
-        net.cuda(gpu_ids[0])
+        # net.cuda(gpu_ids[0])
+        net.cuda(device)
     net.apply(weights_init)
     return net
 
@@ -123,7 +134,8 @@ def define_conv_enc(input_nc, gpu_ids=[]):
     print(net)
     if len(gpu_ids) > 0:
         assert (torch.cuda.is_available())
-        net.cuda(gpu_ids[0])
+        # net.cuda(gpu_ids[0])
+        net.cuda(device)
     net.apply(weights_init)
     return net
 
@@ -133,7 +145,8 @@ def define_AttG(output_nc, gpu_ids=[]):
     print(net)
     if len(gpu_ids) > 0:
         assert (torch.cuda.is_available())
-        net.cuda(gpu_ids[0])
+        # net.cuda(gpu_ids[0])
+        net.cuda(device)
     net.apply(weights_init)
     return net
 
