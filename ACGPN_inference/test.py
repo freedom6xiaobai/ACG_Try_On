@@ -216,6 +216,7 @@ def fashion_test():
                     # cv2.destroyAllWindows()
                 n = str(step) + '.jpg'
                 name_list = data['name']
+                print(f'n {n}')
                 print(f'name_list {name_list}')
                 cv2.imwrite('sample/' + data['name'][0], bgr)
             step += 1
