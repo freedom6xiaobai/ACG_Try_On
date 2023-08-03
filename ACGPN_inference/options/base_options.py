@@ -1,8 +1,16 @@
 import argparse
 import os
+import sys
+
 import torch
 
 from util import util
+
+current_directory = os.path.dirname(os.path.abspath(__file__))
+if current_directory not in sys.path:
+    sys.path.append(current_directory)
+
+print(f'current_directory: {current_directory}')
 
 
 class BaseOptions():
