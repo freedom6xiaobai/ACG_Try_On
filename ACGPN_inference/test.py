@@ -215,6 +215,8 @@ def fashion_test():
                     cv2.waitKey(2000)
                     # cv2.destroyAllWindows()
                 n = str(step) + '.jpg'
+                name_list = data['name']
+                print(f'name_list {name_list}')
                 cv2.imwrite('sample/' + data['name'][0], bgr)
             step += 1
             print(step)
@@ -245,10 +247,12 @@ def fashion_test():
 
         ### instead of only training the local enhancer, train the entire network after certain iterations
         if (opt.niter_fix_global != 0) and (epoch == opt.niter_fix_global):
+            print('instead of only training the local enhancer, train the entire network after certain iterations')
             model.module.update_fixed_params()
 
         ### linearly decay learning rate after certain iterations
         if epoch > opt.niter:
+            print('linearly decay learning rate after certain iterations')
             model.module.update_learning_rate()
 
 
