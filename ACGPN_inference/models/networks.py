@@ -11,17 +11,14 @@ import itertools
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
-# from . import grid_sample
-from ..grid_sample import grid_sample
+from grid_sample import grid_sample
 from torch.autograd import Variable
-from ..tps_grid_gen import TPSGridGen
+from tps_grid_gen import TPSGridGen
 
 
 ###############################################################################
 # Functions
 ###############################################################################
-
-
 def weights_init(m):
     classname = m.__class__.__name__
     if classname.find('Conv2d') != -1:
@@ -45,11 +42,9 @@ def define_G(input_nc, output_nc, ngf, netG, L=1, S=1, n_downsample_global=3, n_
              n_blocks_local=3, norm='instance', gpu_ids=[]):
     norm_layer = get_norm_layer(norm_type=norm)
     if netG == 'global':
-        print('global enhancer not implemented!')
         netG = GlobalGenerator(input_nc, output_nc, L, S, ngf, n_downsample_global, n_blocks_global, norm_layer)
     elif netG == 'local':
-        print('local enhancer not implemented!')
-        netG = GlobalGenerator(input_nc, output_nc, ngf, n_downsample_global, n_blocks_global,
+        netG = LocalEnhancer(input_nc, output_nc, ngf, n_downsample_global, n_blocks_global,
                              n_local_enhancers, n_blocks_local, norm_layer)
     else:
         raise ('generator not implemented!')
@@ -69,10 +64,11 @@ def define_Unet(input_nc, gpu_ids=[]):
 
 
 def define_UnetMask(input_nc, gpu_ids=[]):
-    netG = UnetMask(input_nc,output_nc=4)
+    netG = UnetMask(input_nc, output_nc=4)
     netG.cuda(gpu_ids[0])
     netG.apply(weights_init)
     return netG
+
 
 def define_Refine(input_nc, output_nc, gpu_ids=[]):
     netG = Refine(input_nc, output_nc)
@@ -464,6 +460,8 @@ class AttentionNorm(nn.Module):
         attended = self.conv(attended)
         output = attended + unattended
         return output
+
+
 class UnetMask(nn.Module):
     def __init__(self, input_nc, output_nc=3):
         super(UnetMask, self).__init__()
@@ -518,12 +516,9 @@ class UnetMask(nn.Module):
                                      nn.Conv2d(64, output_nc, kernel_size=3, stride=1, padding=1)
                                      ])
 
-    def forward(self, input, refer, mask,grid):
-
-
-        input, warped_mask,rx,ry,cx,cy,grid = self.stn(input, torch.cat([mask, refer, input], 1), mask,grid)
+    def forward(self, input, refer, mask, grid):
+        input, warped_mask, rx, ry, cx, cy, grid = self.stn(input, torch.cat([mask, refer, input], 1), mask, grid)
         # print(input.shape)
-
 
         conv1 = self.conv1(torch.cat([refer.detach(), input.detach()], 1))
         pool1 = self.pool1(conv1)
@@ -552,7 +547,8 @@ class UnetMask(nn.Module):
 
         up9 = self.up9(conv8)
         conv9 = self.conv9(torch.cat([conv1, up9], 1))
-        return conv9, input, warped_mask,grid
+        return conv9, input, warped_mask, grid
+
 
 class Unet(nn.Module):
     def __init__(self, input_nc, output_nc=3):
@@ -609,7 +605,7 @@ class Unet(nn.Module):
                                      ])
 
     def forward(self, input, refer, mask):
-        input, warped_mask,rx,ry,cx,cy = self.stn(input, torch.cat([mask, refer, input], 1), mask)
+        input, warped_mask, rx, ry, cx, cy = self.stn(input, torch.cat([mask, refer, input], 1), mask)
         # print(input.shape)
 
         conv1 = self.conv1(torch.cat([refer.detach(), input.detach()], 1))
@@ -639,7 +635,7 @@ class Unet(nn.Module):
 
         up9 = self.up9(conv8)
         conv9 = self.conv9(torch.cat([conv1, up9], 1))
-        return conv9, input, warped_mask,rx,ry,cx,cy
+        return conv9, input, warped_mask, rx, ry, cx, cy
 
     def refine(self, input):
         conv1 = self.conv1(input)
@@ -1311,7 +1307,7 @@ class SFTLayer(nn.Module):
 
 class ConvBlock_SFT(nn.Module):
     def __init__(self, dim, norm_type, padding_type, use_dropout=False):
-        super(self).__init__()
+        super(ResnetBlock_SFT, self).__init__()
         self.sft1 = SFTLayer()
         self.conv1 = ConvBlock(dim, dim, 4, 2, 1, norm=norm_type, activation='none', pad_type=padding_type)
 
@@ -1323,7 +1319,7 @@ class ConvBlock_SFT(nn.Module):
 
 class ConvBlock_SFT_last(nn.Module):
     def __init__(self, dim, norm_type, padding_type, use_dropout=False):
-        super(self).__init__()
+        super(ResnetBlock_SFT_last, self).__init__()
         self.sft1 = SFTLayer()
         self.conv1 = ConvBlock(dim, dim, 4, 2, 1, norm=norm_type, activation='none', pad_type=padding_type)
 
@@ -1514,59 +1510,60 @@ class BoundedGridLocNet(nn.Module):
     def forward(self, x):
         batch_size = x.size(0)
         points = F.tanh(self.cnn(x))
-        coor=points.view(batch_size, -1, 2)
-        row=self.get_row(coor,5)
-        col=self.get_col(coor,5)
-        rx,ry,cx,cy=torch.tensor(0.08).cuda(),torch.tensor(0.08).cuda()\
-            ,torch.tensor(0.08).cuda(),torch.tensor(0.08).cuda()
-        row_x,row_y=row[:,:,0],row[:,:,1]
-        col_x,col_y=col[:,:,0],col[:,:,1]
-        rx_loss=torch.max(rx,row_x).mean()
-        ry_loss=torch.max(ry,row_y).mean()
-        cx_loss=torch.max(cx,col_x).mean()
-        cy_loss=torch.max(cy,col_y).mean()
+        coor = points.view(batch_size, -1, 2)
+        # coor+=torch.randn(coor.shape).cuda()/10
+        row = self.get_row(coor, 5)
+        col = self.get_col(coor, 5)
+        rx, ry, cx, cy = torch.tensor(0.08).cuda(), torch.tensor(0.08).cuda() \
+            , torch.tensor(0.08).cuda(), torch.tensor(0.08).cuda()
+        row_x, row_y = row[:, :, 0], row[:, :, 1]
+        col_x, col_y = col[:, :, 0], col[:, :, 1]
+        rx_loss = torch.max(rx, row_x).mean()
+        ry_loss = torch.max(ry, row_y).mean()
+        cx_loss = torch.max(cx, col_x).mean()
+        cy_loss = torch.max(cy, col_y).mean()
 
+        return coor, rx_loss, ry_loss, cx_loss, cy_loss
 
-        return  coor,rx_loss,ry_loss,cx_loss,cy_loss
-
-    def get_row(self,coor,num):
-        sec_dic=[]
+    def get_row(self, coor, num):
+        sec_dic = []
         for j in range(num):
-            sum=0
-            buffer=0
-            flag=False
-            max=-1
-            for i in range(num-1):
-                differ=(coor[:,j*num+i+1,:]-coor[:,j*num+i,:])**2
+            sum = 0
+            buffer = 0
+            flag = False
+            max = -1
+            for i in range(num - 1):
+                differ = (coor[:, j * num + i + 1, :] - coor[:, j * num + i, :]) ** 2
                 if not flag:
-                    second_dif=0
-                    flag=True
+                    second_dif = 0
+                    flag = True
                 else:
-                    second_dif=torch.abs(differ-buffer)
+                    second_dif = torch.abs(differ - buffer)
                     sec_dic.append(second_dif)
 
-                buffer=differ
-                sum+=second_dif
-        return torch.stack(sec_dic,dim=1)
+                buffer = differ
+                sum += second_dif
+        return torch.stack(sec_dic, dim=1)
 
-    def get_col(self,coor,num):
-        sec_dic=[]
+    def get_col(self, coor, num):
+        sec_dic = []
         for i in range(num):
             sum = 0
             buffer = 0
             flag = False
             max = -1
             for j in range(num - 1):
-                differ = (coor[:, (j+1) * num + i , :] - coor[:, j * num + i, :]) ** 2
+                differ = (coor[:, (j + 1) * num + i, :] - coor[:, j * num + i, :]) ** 2
                 if not flag:
                     second_dif = 0
                     flag = True
                 else:
-                    second_dif = torch.abs(differ-buffer)
+                    second_dif = torch.abs(differ - buffer)
                     sec_dic.append(second_dif)
                 buffer = differ
                 sum += second_dif
-        return torch.stack(sec_dic,dim=1)
+        return torch.stack(sec_dic, dim=1)
+
 
 class UnBoundedGridLocNet(nn.Module):
 
@@ -1601,7 +1598,7 @@ class STNNet(nn.Module):
         )))
         Y, X = target_control_points.split(1, dim=1)
         target_control_points = torch.cat([X, Y], dim=1)
-        self.target_control_points=target_control_points
+        self.target_control_points = target_control_points
         # self.get_row(target_control_points,5)
         GridLocNet = {
             'unbounded_stn': UnBoundedGridLocNet,
@@ -1628,32 +1625,34 @@ class STNNet(nn.Module):
                 buffer = differ
                 sum += second_dif
             print(sum / num)
-    def get_col(self,coor,num):
+
+    def get_col(self, coor, num):
         for i in range(num):
             sum = 0
             buffer = 0
             flag = False
             max = -1
             for j in range(num - 1):
-                differ = (coor[ (j + 1) * num + i, :] - coor[j * num + i, :]) ** 2
+                differ = (coor[(j + 1) * num + i, :] - coor[j * num + i, :]) ** 2
                 if not flag:
                     second_dif = 0
                     flag = True
                 else:
-                    second_dif = torch.abs(differ-buffer)
+                    second_dif = torch.abs(differ - buffer)
 
                 buffer = differ
                 sum += second_dif
             print(sum)
-    def forward(self, x, reference, mask,grid_pic):
+
+    def forward(self, x, reference, mask, grid_pic):
         batch_size = x.size(0)
-        source_control_points,rx,ry,cx,cy = self.loc_net(reference)
-        source_control_points=(source_control_points)
+        source_control_points, rx, ry, cx, cy = self.loc_net(reference)
+        source_control_points = (source_control_points)
         # print('control points',source_control_points.shape)
         source_coordinate = self.tps(source_control_points)
         grid = source_coordinate.view(batch_size, 256, 192, 2)
         # print('grid size',grid.shape)
         transformed_x = grid_sample(x, grid, canvas=0)
         warped_mask = grid_sample(mask, grid, canvas=0)
-        warped_gpic= grid_sample(grid_pic, grid, canvas=0)
-        return transformed_x, warped_mask,rx,ry,cx,cy,warped_gpic
+        warped_gpic = grid_sample(grid_pic, grid, canvas=0)
+        return transformed_x, warped_mask, rx, ry, cx, cy, warped_gpic

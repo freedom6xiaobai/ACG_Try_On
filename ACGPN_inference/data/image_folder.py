@@ -12,23 +12,22 @@ IMG_EXTENSIONS = [
 def is_image_file(filename):
     return any(filename.endswith(extension) for extension in IMG_EXTENSIONS)
 
+
 def make_dataset(dir):
-    print(f'dir: {dir}')
     images = []
     assert os.path.isdir(dir), '%s is not a valid directory' % dir
 
     f = dir.split('/')[-1].split('_')[-1]
-    print (dir, f)
-    dirs= os.listdir(dir)
+    print(dir, f)
+    dirs = os.listdir(dir)
     for img in dirs:
-
         path = os.path.join(dir, img)
-        print(path)
+        # print(path)
         images.append(path)
     return images
 
+
 def make_dataset_test(dir):
-    print(f'dir: {dir}')
     images = []
     assert os.path.isdir(dir), '%s is not a valid directory' % dir
 
@@ -39,9 +38,10 @@ def make_dataset_test(dir):
         else:
             img = str(i) + '.jpg'
         path = os.path.join(dir, img)
-        print(path)
+        # print(path)
         images.append(path)
     return images
+
 
 def default_loader(path):
     return Image.open(path).convert('RGB')
@@ -53,9 +53,9 @@ class ImageFolder(data.Dataset):
                  loader=default_loader):
         imgs = make_dataset(root)
         if len(imgs) == 0:
-            raise(RuntimeError("Found 0 images in: " + root + "\n"
-                               "Supported image extensions are: " +
-                               ",".join(IMG_EXTENSIONS)))
+            raise (RuntimeError("Found 0 images in: " + root + "\n"
+                                                               "Supported image extensions are: " +
+                                ",".join(IMG_EXTENSIONS)))
 
         self.root = root
         self.imgs = imgs

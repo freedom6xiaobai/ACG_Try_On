@@ -13,21 +13,18 @@ class AlignedDataset(BaseDataset):
     def initialize(self, opt):
         self.opt = opt
         self.root = opt.dataroot
-        self.diction={}
-
-        print('root: ', self.root)
-
+        self.diction = {}
         ### input A (label maps)
         if opt.isTrain or opt.use_encoded_image:
             dir_A = '_A' if self.opt.label_nc == 0 else '_label'
             self.dir_A = os.path.join(opt.dataroot, opt.phase + dir_A)
-            print(f'dir_A: {self.dir_A}')
             self.A_paths = sorted(make_dataset(self.dir_A))
             self.AR_paths = make_dataset(self.dir_A)
 
-        self.fine_height=256
-        self.fine_width=192
-        self.radius=5
+
+        self.fine_height = 256
+        self.fine_width = 192
+        self.radius = 5
         ### input A test (label maps)
         if not (opt.isTrain or opt.use_encoded_image):
             dir_A = '_A' if self.opt.label_nc == 0 else '_label'
@@ -36,6 +33,7 @@ class AlignedDataset(BaseDataset):
             dir_AR = '_AR' if self.opt.label_nc == 0 else '_labelref'
             self.dir_AR = os.path.join(opt.dataroot, opt.phase + dir_AR)
             self.AR_paths = sorted(make_dataset_test(self.dir_AR))
+
 
         ### input B (real images)
         dir_B = '_B' if self.opt.label_nc == 0 else '_img'
@@ -79,29 +77,30 @@ class AlignedDataset(BaseDataset):
             dir_A = '_A' if self.opt.label_nc == 0 else '_label'
             self.dir_A = os.path.join(opt.dataroot, opt.phase + dir_A)
             self.A_paths = sorted(make_dataset_test(self.dir_A))
-    def random_sample(self,item):
+
+    def random_sample(self, item):
         name = item.split('/')[-1]
         name = name.split('-')[0]
-        lst=self.diction[name]
-        new_lst=[]
+        lst = self.diction[name]
+        new_lst = []
         for dir in lst:
             if dir != item:
                 new_lst.append(dir)
         return new_lst[np.random.randint(len(new_lst))]
-    def build_index(self,dirs):
-        for k,dir in enumerate(dirs):
-            name=dir.split('/')[-1]
-            name=name.split('-')[0]
+
+    def build_index(self, dirs):
+        for k, dir in enumerate(dirs):
+            name = dir.split('/')[-1]
+            name = name.split('-')[0]
 
             # print(name)
-            for k,d in enumerate(dirs[max(k-20,0):k+20]):
+            for k, d in enumerate(dirs[max(k - 20, 0):k + 20]):
                 if name in d:
                     if name not in self.diction.keys():
-                        self.diction[name]=[]
+                        self.diction[name] = []
                         self.diction[name].append(d)
                     else:
                         self.diction[name].append(d)
-
 
     def __getitem__(self, index):
         train_mask = 9600

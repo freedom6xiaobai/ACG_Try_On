@@ -1,5 +1,6 @@
 venv
 .idea
 
-ACGPN_traindata
+Data_preprocessing
 ACGPN_inference/checkpoints/label2city
+ACGPN_train
