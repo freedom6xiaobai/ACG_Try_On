@@ -210,8 +210,10 @@ def fashion_test():
                 writer.add_image('combine', (combine.data + 1) / 2.0, step)
                 rgb = (cv_img * 255).astype(np.uint8)
                 bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-                cv2.imshow("result", bgr)
-                cv2.waitKey(2000)
+                if os.environ.get('DISPLAY') is not None:
+                    cv2.imshow("result", bgr)
+                    cv2.waitKey(2000)
+                    # cv2.destroyAllWindows()
                 n = str(step) + '.jpg'
                 cv2.imwrite('sample/' + data['name'][0], bgr)
             step += 1
