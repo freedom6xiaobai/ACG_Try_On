@@ -157,20 +157,20 @@ def fashion_test():
             # sum per device losses
             losses = [torch.mean(x) if not isinstance(x, int) else x for x in losses]
             print(f'losses: {losses}')
-            loss_dict = dict(zip(model.module.loss_names, losses))
+            # loss_dict = dict(zip(model.module.loss_names, losses))
 
             print('Start Testing:4')
 
             # calculate final loss scalar
-            loss_D = (loss_dict['D_fake'] + loss_dict['D_real']) * 0.5
-            loss_G = loss_dict['G_GAN'] + torch.mean(
-                CE_loss)  # loss_dict.get('G_GAN_Feat',0)+torch.mean(L1_loss)+loss_dict.get('G_VGG',0)
+            # loss_D = (loss_dict['D_fake'] + loss_dict['D_real']) * 0.5
+            # loss_G = loss_dict['G_GAN'] + torch.mean(
+            #     CE_loss)  # loss_dict.get('G_GAN_Feat',0)+torch.mean(L1_loss)+loss_dict.get('G_VGG',0)
 
-            writer.add_scalar('loss_d', loss_D, step)
-            writer.add_scalar('loss_g', loss_G, step)
+            # writer.add_scalar('loss_d', loss_D, step)
+            # writer.add_scalar('loss_g', loss_G, step)
             # writer.add_scalar('loss_L1', torch.mean(L1_loss), step)
 
-            writer.add_scalar('loss_CE', torch.mean(CE_loss), step)
+            # writer.add_scalar('loss_CE', torch.mean(CE_loss), step)
             # writer.add_scalar('acc', torch.mean(acc)*100, step)
             # writer.add_scalar('loss_face', torch.mean(face_loss), step)
             # writer.add_scalar('loss_fore', torch.mean(fore_loss), step)
@@ -178,7 +178,7 @@ def fashion_test():
             # writer.add_scalar('loss_mask', torch.mean(mask_loss), step)
             # writer.add_scalar('loss_style', torch.mean(style_loss), step)
 
-            writer.add_scalar('loss_g_gan', loss_dict['G_GAN'], step)
+            # writer.add_scalar('loss_g_gan', loss_dict['G_GAN'], step)
             # writer.add_scalar('loss_g_gan_feat', loss_dict['G_GAN_Feat'], step)
             # writer.add_scalar('loss_g_vgg', loss_dict['G_VGG'], step)
 
