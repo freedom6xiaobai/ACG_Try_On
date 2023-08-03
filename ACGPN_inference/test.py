@@ -1,3 +1,4 @@
+import sys
 import time
 from collections import OrderedDict
 from options.train_options import TrainOptions
@@ -13,6 +14,15 @@ import cv2
 writer = SummaryWriter('runs/G1G2')
 SIZE=320
 NC=14
+
+
+current_directory = os.path.dirname(os.path.abspath(__file__))
+if current_directory not in sys.path:
+    sys.path.append(current_directory)
+
+print(f'current_directory: {current_directory}')
+
+
 def generate_label_plain(inputs):
     size = inputs.size()
     pred_batch = []
@@ -65,7 +75,9 @@ def changearm(old_label):
     return label
 os.makedirs('sample',exist_ok=True)
 opt = TrainOptions().parse()
+print(f'opt={opt}')
 iter_path = os.path.join(opt.checkpoints_dir, opt.name, 'iter.txt')
+print(f'iter_path={iter_path}')
 if opt.continue_train:
     try:
         start_epoch, epoch_iter = np.loadtxt(iter_path , delimiter=',', dtype=int)
