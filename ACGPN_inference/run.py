@@ -13,8 +13,8 @@ from torch.utils.tensorboard import SummaryWriter
 import cv2
 
 writer = SummaryWriter('runs/G1G2')
-SIZE=320
-NC=14
+SIZE = 320
+NC = 14
 
 current_directory = os.path.dirname(os.path.abspath(__file__))
 if current_directory not in sys.path:
@@ -79,57 +79,38 @@ def fashion_test():
 
     os.makedirs('sample', exist_ok=True)
     opt = TrainOptions().parse()
-    iter_path = os.path.join(opt.checkpoints_dir, opt.name, 'iter.txt')
-    if opt.continue_train:
-        try:
-            start_epoch, epoch_iter = np.loadtxt(iter_path, delimiter=',', dtype=int)
-        except:
-            start_epoch, epoch_iter = 1, 0
-        print('Resuming from epoch %d at iteration %d' % (start_epoch, epoch_iter))
-    else:
-        start_epoch, epoch_iter = 1, 0
-
-    if opt.debug:
-        opt.display_freq = 1
-        opt.print_freq = 1
-        opt.niter = 1
-        opt.niter_decay = 0
-        opt.max_dataset_size = 10
+    # config
+    start_epoch, epoch_iter = 1, 0
+    opt.display_freq = 1
+    opt.print_freq = 1
+    opt.niter = 1
+    opt.niter_decay = 0
+    opt.max_dataset_size = 10
 
     data_loader = CreateDataLoader(opt)
     dataset = data_loader.load_data()
     dataset_size = len(data_loader)
     print('# Inference images = %d' % dataset_size)
 
+    # model create
     model = create_model(opt)
-
     total_steps = (start_epoch - 1) * dataset_size + epoch_iter
 
-    display_delta = total_steps % opt.display_freq
-    print_delta = total_steps % opt.print_freq
-    save_delta = total_steps % opt.save_latest_freq
+    print('Start Testing:')
+    print(f'start_epoch: {start_epoch}')  # 1
+    print(f'epoch_iter: {epoch_iter}')  # 0
+    print(f' opt.niter: {opt.niter}')  # 100
+    print(f'opt.niter_decay: {opt.niter_decay + 1}')  # 101
 
     step = 0
-
-    print('Start Testing:')
-    print(f'start_epoch: {start_epoch}') #1
-    print(f'epoch_iter: {epoch_iter}') #0
-    print(f' opt.niter: {opt.niter}') #100
-    print(f'opt.niter_decay: {opt.niter_decay + 1}') #101
-
     for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         epoch_start_time = time.time()
         if epoch != start_epoch:
             epoch_iter = epoch_iter % dataset_size
         for i, data in enumerate(dataset, start=epoch_iter):
 
-            iter_start_time = time.time()
             total_steps += opt.batchSize
             epoch_iter += opt.batchSize
-
-            # whether to collect output images
-            # save_fake = total_steps % opt.display_freq == display_delta
-            save_fake = True
 
             print('Start Testing:1')
 
@@ -161,39 +142,6 @@ def fashion_test():
 
             print('Start Testing:4')
 
-            # calculate final loss scalar
-            # loss_D = (loss_dict['D_fake'] + loss_dict['D_real']) * 0.5
-            # loss_G = loss_dict['G_GAN'] + torch.mean(
-            #     CE_loss)  # loss_dict.get('G_GAN_Feat',0)+torch.mean(L1_loss)+loss_dict.get('G_VGG',0)
-
-            # writer.add_scalar('loss_d', loss_D, step)
-            # writer.add_scalar('loss_g', loss_G, step)
-            # writer.add_scalar('loss_L1', torch.mean(L1_loss), step)
-
-            # writer.add_scalar('loss_CE', torch.mean(CE_loss), step)
-            # writer.add_scalar('acc', torch.mean(acc)*100, step)
-            # writer.add_scalar('loss_face', torch.mean(face_loss), step)
-            # writer.add_scalar('loss_fore', torch.mean(fore_loss), step)
-            # writer.add_scalar('loss_tv', torch.mean(tv_loss), step)
-            # writer.add_scalar('loss_mask', torch.mean(mask_loss), step)
-            # writer.add_scalar('loss_style', torch.mean(style_loss), step)
-
-            # writer.add_scalar('loss_g_gan', loss_dict['G_GAN'], step)
-            # writer.add_scalar('loss_g_gan_feat', loss_dict['G_GAN_Feat'], step)
-            # writer.add_scalar('loss_g_vgg', loss_dict['G_VGG'], step)
-
-            ############### Backward Pass ####################
-            # update generator weights
-            # model.module.optimizer_G.zero_grad()
-            # loss_G.backward()
-            # model.module.optimizer_G.step()
-            # # update discriminator weights
-            # model.module.optimizer_D.zero_grad()
-            # loss_D.backward()
-            # model.module.optimizer_D.step()
-
-            # call(["nvidia-smi", "--format=csv", "--query-gpu=memory.used,memory.free"])
-
             ############## Display results and errors ##########
 
             print('Start Testing:5')
@@ -221,35 +169,13 @@ def fashion_test():
                 cv2.imwrite('sample/' + data['name'][0], bgr)
             step += 1
             print(step)
-            ### save latest model
-            if total_steps % opt.save_latest_freq == save_delta:
-                # print('saving the latest model (epoch %d, total_steps %d)' % (epoch, total_steps))
-                # model.module.save('latest')
-                # np.savetxt(iter_path, (epoch, epoch_iter), delimiter=',', fmt='%d')
-                pass
             if epoch_iter >= dataset_size:
                 break
-
 
         print('Start Testing:6')
 
         # end of epoch
-        iter_end_time = time.time()
-        print('End of epoch %d / %d \t Time Taken: %d sec' %
-              (epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
-        # break
-
-        ### save model for this epoch
-        if epoch % opt.save_epoch_freq == 0:
-            print('saving the model at the end of epoch %d, iters %d' % (epoch, total_steps))
-            model.module.save('latest')
-            model.module.save(epoch)
-            # np.savetxt(iter_path, (epoch+1, 0), delimiter=',', fmt='%d')
-
-        ### instead of only training the local enhancer, train the entire network after certain iterations
-        if (opt.niter_fix_global != 0) and (epoch == opt.niter_fix_global):
-            print('instead of only training the local enhancer, train the entire network after certain iterations')
-            model.module.update_fixed_params()
+        print('End of epoch %d / %d \t Time Taken: %d sec' % ( epoch, opt.niter + opt.niter_decay, time.time() - epoch_start_time))
 
         ### linearly decay learning rate after certain iterations
         if epoch > opt.niter:
