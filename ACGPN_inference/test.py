@@ -127,7 +127,7 @@ def fashion_test():
 
             ##add gaussian noise channel
             ## wash the label
-            t_mask = torch.FloatTensor((data['label'].cpu().numpy() == 7).astype(np.float))
+            t_mask = torch.FloatTensor((data['label'].cpu().numpy() == 7).astype(np.float64))
             data['label'] = data['label'] * (1 - t_mask) + t_mask * 4
             mask_clothes = torch.FloatTensor((data['label'].cpu().numpy() == 4).astype(np.int))
             mask_fore = torch.FloatTensor((data['label'].cpu().numpy() > 0).astype(np.int))

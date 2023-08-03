@@ -288,9 +288,9 @@ class Pix2PixHDModel(BaseModel):
 
         # Encode Inputs
         input_label, masked_label, all_clothes_label = self.encode_input(label, clothes_mask, all_clothes_label)
-        arm1_mask = torch.FloatTensor((label.cpu().numpy() == 11).astype(np.float)).cuda()
-        arm2_mask = torch.FloatTensor((label.cpu().numpy() == 13).astype(np.float)).cuda()
-        pre_clothes_mask = torch.FloatTensor((pre_clothes_mask.detach().cpu().numpy() > 0.5).astype(np.float)).cuda()
+        arm1_mask = torch.FloatTensor((label.cpu().numpy() == 11).astype(np.float64)).cuda()
+        arm2_mask = torch.FloatTensor((label.cpu().numpy() == 13).astype(np.float64)).cuda()
+        pre_clothes_mask = torch.FloatTensor((pre_clothes_mask.detach().cpu().numpy() > 0.5).astype(np.float64)).cuda()
         clothes = clothes * pre_clothes_mask
 
         shape = pre_clothes_mask.shape
@@ -307,11 +307,11 @@ class Pix2PixHDModel(BaseModel):
         fake_cl = self.sigmoid(fake_cl)
         CE_loss += self.BCE(fake_cl, clothes_mask) * 10
 
-        fake_cl_dis = torch.FloatTensor((fake_cl.detach().cpu().numpy() > 0.5).astype(np.float)).cuda()
+        fake_cl_dis = torch.FloatTensor((fake_cl.detach().cpu().numpy() > 0.5).astype(np.float64)).cuda()
         fake_cl_dis = morpho(fake_cl_dis, 1, True)
 
-        new_arm1_mask = torch.FloatTensor((armlabel_map.cpu().numpy() == 11).astype(np.float)).cuda()
-        new_arm2_mask = torch.FloatTensor((armlabel_map.cpu().numpy() == 13).astype(np.float)).cuda()
+        new_arm1_mask = torch.FloatTensor((armlabel_map.cpu().numpy() == 11).astype(np.float64)).cuda()
+        new_arm2_mask = torch.FloatTensor((armlabel_map.cpu().numpy() == 13).astype(np.float64)).cuda()
         fake_cl_dis = fake_cl_dis * (1 - new_arm1_mask) * (1 - new_arm2_mask)
         fake_cl_dis *= mask_fore
 
