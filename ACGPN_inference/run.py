@@ -124,7 +124,10 @@ def fashion_test():
         b = real_image.float().cuda()
         c = fake_image.float().cuda()
         d = torch.cat([clothes_mask, clothes_mask, clothes_mask], 1)
-        combine = torch.cat([a[0], d[0], b[0], c[0], rgb[0]], 2).squeeze()
+        #输出合并图
+        # combine = torch.cat([a[0], d[0], b[0], c[0], rgb[0]], 2).squeeze()
+        #输出单个修改图
+        combine = c[0].squeeze()
         cv_img = (combine.permute(1, 2, 0).detach().cpu().numpy() + 1) / 2
 
         rgb = (cv_img * 255).astype(np.uint8)
