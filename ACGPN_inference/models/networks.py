@@ -948,7 +948,7 @@ from torchvision import models
 class Vgg19(torch.nn.Module):
     def __init__(self, requires_grad=False):
         super(Vgg19, self).__init__()
-        vgg = models.vgg19(pretrained=False)
+        vgg = models.vgg19()
         vgg_pretrained_features = vgg.features
         self.vgg = vgg
         self.slice1 = torch.nn.Sequential()
