@@ -111,6 +111,12 @@ def fashion_test():
 
     step = 0
 
+    print('Start Testing:')
+    print(f'start_epoch: {start_epoch}')
+    print(f'epoch_iter: {epoch_iter}')
+    print(f' opt.niter: {opt.niter}')
+    print(f'opt.niter_decay: {opt.niter_decay + 1}')
+
     for epoch in range(start_epoch, opt.niter + opt.niter_decay + 1):
         epoch_start_time = time.time()
         if epoch != start_epoch:
@@ -125,6 +131,8 @@ def fashion_test():
             # save_fake = total_steps % opt.display_freq == display_delta
             save_fake = True
 
+            print('Start Testing:1')
+
             ##add gaussian noise channel
             ## wash the label
             t_mask = torch.FloatTensor((data['label'].cpu().numpy() == 7).astype(np.float64))
@@ -135,6 +143,8 @@ def fashion_test():
             img_fore_wc = img_fore * mask_fore
             all_clothes_label = changearm(data['label'])
 
+            print('Start Testing:2')
+
             ############## Forward Pass ######################
             losses, fake_image, real_image, input_label, L1_loss, style_loss, clothes_mask, CE_loss, rgb, alpha = model(
                 Variable(data['label'].cuda()), Variable(data['edge'].cuda()), Variable(img_fore.cuda()),
@@ -142,9 +152,13 @@ def fashion_test():
                 , Variable(data['color'].cuda()), Variable(all_clothes_label.cuda()), Variable(data['image'].cuda()),
                 Variable(data['pose'].cuda()), Variable(data['image'].cuda()), Variable(mask_fore.cuda()))
 
+            print('Start Testing:3')
+
             # sum per device losses
             losses = [torch.mean(x) if not isinstance(x, int) else x for x in losses]
             loss_dict = dict(zip(model.module.loss_names, losses))
+
+            print('Start Testing:4')
 
             # calculate final loss scalar
             loss_D = (loss_dict['D_fake'] + loss_dict['D_real']) * 0.5
@@ -181,6 +195,8 @@ def fashion_test():
 
             ############## Display results and errors ##########
 
+            print('Start Testing:5')
+
             ### display output images
             a = generate_label_color(generate_label_plain(input_label)).float().cuda()
             b = real_image.float().cuda()
@@ -207,6 +223,9 @@ def fashion_test():
                 pass
             if epoch_iter >= dataset_size:
                 break
+
+
+        print('Start Testing:6')
 
         # end of epoch
         iter_end_time = time.time()
