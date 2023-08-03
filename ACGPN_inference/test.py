@@ -156,6 +156,7 @@ def fashion_test():
 
             # sum per device losses
             losses = [torch.mean(x) if not isinstance(x, int) else x for x in losses]
+            print(f'losses: {losses}')
             loss_dict = dict(zip(model.module.loss_names, losses))
 
             print('Start Testing:4')
