@@ -52,18 +52,18 @@ class AlignedDataset(BaseDataset):
             self.ER_paths = make_dataset(self.dir_E)
 
         ### input M (masks)
-        if opt.isTrain or opt.use_encoded_image:
-            dir_M = '_mask'
-            self.dir_M = os.path.join(opt.dataroot, opt.phase + dir_M)
-            self.M_paths = sorted(make_dataset(self.dir_M))
-            self.MR_paths = make_dataset(self.dir_M)
+        # if opt.isTrain or opt.use_encoded_image:
+        #     dir_M = '_mask'
+        #     self.dir_M = os.path.join(opt.dataroot, opt.phase + dir_M)
+        #     self.M_paths = sorted(make_dataset(self.dir_M))
+        #     self.MR_paths = make_dataset(self.dir_M)
 
         ### input MC(color_masks)
-        if opt.isTrain or opt.use_encoded_image:
-            dir_MC = '_colormask'
-            self.dir_MC = os.path.join(opt.dataroot, opt.phase + dir_MC)
-            self.MC_paths = sorted(make_dataset(self.dir_MC))
-            self.MCR_paths = make_dataset(self.dir_MC)
+        # if opt.isTrain or opt.use_encoded_image:
+        #     dir_MC = '_colormask'
+        #     self.dir_MC = os.path.join(opt.dataroot, opt.phase + dir_MC)
+        #     self.MC_paths = sorted(make_dataset(self.dir_MC))
+        #     self.MCR_paths = make_dataset(self.dir_MC)
         ### input C(color)
         if opt.isTrain or opt.use_encoded_image:
             dir_C = '_color'
@@ -161,14 +161,17 @@ class AlignedDataset(BaseDataset):
         MCR = Image.open(MCR_path).convert('L')
         MC_tensor = transform_A(MCR)
 
+        # 替换随机衣服
+        index_random = np.random.randint(len(self.C_paths))
+
         ### input_C (color)
         # print(self.C_paths)
-        C_path = self.C_paths[index]
+        C_path = self.C_paths[index_random]
         C = Image.open(C_path).convert('RGB')
         C_tensor = transform_B(C)
 
         ##Edge
-        E_path = self.E_paths[index]
+        E_path = self.E_paths[index_random]
         # print(E_path)
         E = Image.open(E_path).convert('L')
         E_tensor = transform_A(E)
